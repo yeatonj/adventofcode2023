@@ -1,4 +1,4 @@
-# File for day 1 of AoC 2023
+# File for day 2 of AoC 2023
 # Written by Joshua Yeaton on 12/2/2023
 
 MAX_RED = 12
