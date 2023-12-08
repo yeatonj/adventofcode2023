@@ -1,5 +1,5 @@
 # File for day 7 of AoC 2023
-# Written by Joshua Yeaton on 12/7/2023
+# Written by Joshua Yeaton on 12/8/2023
 
 # General thought process - create a tuple for each hand.
 # Go thru the entries in the hand and stick into temp dict - count dict
