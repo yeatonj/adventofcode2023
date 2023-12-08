@@ -16,6 +16,21 @@ def find_out_from_in(cur_val, map_array):
     # if we get to this point, it is a direct mapping
     return cur_val
 
+def check_in_seeds_pt2(seed_num, seed_arr, seed_arr_len):
+    i = 0
+    while (i < seed_arr_len):
+        if ((seed_num >= seed_arr[i]) and (seed_num < (seed_arr[i] + seed_arr[i+1]))):
+            return True
+        i += 2
+    return False
+
+def find_in_from_out(cur_val, map_array):
+    for mapping in map_array:
+        if ((cur_val >= mapping[0]) and (cur_val < (mapping[0] + mapping[2]))):
+            return cur_val - mapping[0] + mapping[1]
+    # if we get to this point, it is a direct mapping
+    return cur_val
+
 
 file_name = 'data.txt'
 # file_name = 'data-test.txt'
@@ -31,7 +46,7 @@ lgt_temp = []
 temp_hum = []
 hum_loc = []
 
-# parse the seeds
+# parse the seeds, part 1
 seed_line = f.readline().strip().split()
 for i in range(1,len(seed_line)):
     seeds.append(int(seed_line[i]))
@@ -61,6 +76,25 @@ for seed in seeds:
 
 print('Lowest location (part 1 solution) is: ' + str(lowest_loc))
 
+# For part 2, do the same thing, but in reverse, checking to see if the seed is in the range of seeds
+# first, find the minimum seed value
 
+seed_arr_len = len(seeds)
+loc = 0
+found_loc = False
+while (not found_loc):
+    hum = find_in_from_out(loc, hum_loc)
+    temp = find_in_from_out(hum, temp_hum)
+    lgt = find_in_from_out(temp, lgt_temp)
+    wat = find_in_from_out(lgt, wat_lgt)
+    fert = find_in_from_out(wat, fert_wat)
+    soil = find_in_from_out(fert, soil_fert)
+    seed = find_in_from_out(soil, seed_soil)
+    found_loc = check_in_seeds_pt2(seed, seeds, seed_arr_len)
+    loc += 1
+    if (loc % 1000 == 0):
+        print('Finished checking loc: ' + str(loc))
+
+print('Lowest location (part 2 solution) is: ' + str(loc - 1))
 
 f.close()
