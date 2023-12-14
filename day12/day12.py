@@ -9,9 +9,94 @@ def parse_line(line_in):
         arrs[i] = int(arrs[i])
     return (split_line[0], arrs)
 
-# !!
 def calculate_arrangements(line, spring_count):
-    return 1
+    found_dic = {}
+    return recursive_calc_arr(line, spring_count, found_dic)
+
+
+def recursive_calc_arr(line, spring_count, found_dic):
+    print(line)
+    print(is_valid(line, spring_count))
+    # Check the memoization dict
+    if line in found_dic:
+        return found_dic.get(line)
+    # Check if line is valid
+    if not is_valid(line, spring_count):
+        return 0
+    # Find the first '?'
+    found_quest = False
+    for i in range(len(line)):
+        if line[i] == '?':
+            found_quest = True
+            break
+    # If this is complete line, return this value
+    if not found_quest:
+        found_dic.update({line:1})
+        return 1
+    # At this point, we need to check the two options
+    temp_sum = 0
+    temp_line = list(line)
+    temp_line[i] = '.'
+    per_line = ''.join(temp_line)
+    temp_line[i] = '#'
+    hash_line = ''.join(temp_line)
+    # Now, we can test our two lines
+    temp_sum += recursive_calc_arr(per_line, spring_count, found_dic)
+    temp_sum += recursive_calc_arr(hash_line, spring_count, found_dic)
+    found_dic.update({line:temp_sum})
+    return temp_sum
+
+    
+
+def is_valid(line, spring_count):
+    cur_ind = 0
+    str_len = len(line)
+    for val in spring_count:
+        found = False
+        while (not found):
+            if (cur_ind > 0):
+                if (cur_ind < str_len and line[cur_ind - 1] == '#'):
+                    return False
+            if ((cur_ind + val) > str_len):
+                return False
+            elif (line[cur_ind] == '?'):
+                found = True
+                for offset in range(0, val):
+                    if (line[cur_ind + offset] == '.'):
+                        cur_ind += 1
+                        found = False
+                        break
+                # Check to make sure that the next index isn't #
+                if ((cur_ind + offset + 1 < str_len) and (line[cur_ind + offset + 1] == '#')):
+                    cur_ind += 1
+                    found = False
+                if found:
+                    # !! find the next possible start point
+                    cur_ind += offset + 2
+                    if (cur_ind - 1 < str_len and line[cur_ind - 1] == '#'):
+                        return False
+            elif (line[cur_ind] == '#'):
+                found = True
+                for offset in range(0, val):
+                    if (line[cur_ind + offset] == '.'):
+                        cur_ind += 1
+                        found = False
+                        break
+                # Check to make sure that the next index isn't #
+                if ((cur_ind + offset + 1 < str_len) and (line[cur_ind + offset + 1] == '#')):
+                    cur_ind += 1
+                    found = False
+                if found:
+                    # !! find the next possible start point
+                    cur_ind += offset + 2
+                    if (cur_ind - 1 < str_len and line[cur_ind - 1] == '#'):
+                        return False
+            else: 
+                cur_ind += 1
+    return True
+
+
+
 
 if __name__ == '__main__':
     filename = 'data.txt'
