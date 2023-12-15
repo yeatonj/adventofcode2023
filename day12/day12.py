@@ -15,8 +15,8 @@ def calculate_arrangements(line, spring_count):
 
 
 def recursive_calc_arr(line, spring_count, found_dic):
-    print(line)
-    print(is_valid(line, spring_count))
+    # print(line)
+    # print(is_valid(line, spring_count))
     # Check the memoization dict
     if line in found_dic:
         return found_dic.get(line)
@@ -79,13 +79,10 @@ def is_valid(line, spring_count):
                 found = True
                 for offset in range(0, val):
                     if (line[cur_ind + offset] == '.'):
-                        cur_ind += 1
-                        found = False
-                        break
+                        return False
                 # Check to make sure that the next index isn't #
                 if ((cur_ind + offset + 1 < str_len) and (line[cur_ind + offset + 1] == '#')):
-                    cur_ind += 1
-                    found = False
+                    return False
                 if found:
                     # !! find the next possible start point
                     cur_ind += offset + 2
@@ -93,6 +90,10 @@ def is_valid(line, spring_count):
                         return False
             else: 
                 cur_ind += 1
+    # At this point, we need to make sure the rest of the string is either . or ?
+    for i in range(cur_ind, len(line)):
+        if line[i] == '#':
+            return False
     return True
 
 
@@ -119,3 +120,5 @@ if __name__ == '__main__':
     print('Solution is: ' + str(total))
 
     f.close()
+
+# Answer of 6468 is too low
