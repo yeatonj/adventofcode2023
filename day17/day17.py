@@ -16,12 +16,11 @@ def h_func(cur_loc, max_row, max_col):
     return ((max_row - cur_loc[0]) + (max_col - cur_loc[1]))
 
 def create_path(came_from, cur):
-    path = [cur]
-    path.append(cur)
+    path = [cur[0]]
     temp_node = cur
     while (temp_node in came_from):
         prev = came_from.get(temp_node)
-        path = [prev] + path
+        path = [prev[0]] + path
         temp_node = prev
     return path
 
@@ -30,9 +29,9 @@ def in_line(cur_node, prev_nodes):
     rows_same = True
     cols_same = True
     for node in prev_nodes:
-        if cur_node[0] != node[0]:
+        if cur_node[0][0] != node[0][0]:
             rows_same = False
-        if cur_node[1] != node[1]:
+        if cur_node[0][1] != node[0][1]:
             cols_same = False
     return rows_same or cols_same
 
@@ -64,42 +63,44 @@ def a_star(start, goal, loss_map, max_row, max_col):
     # gscore + h = fscore
     f_score = {}
     for pt in loss_map:
-        g_score.update({pt:'inf'})
-        f_score.update({pt:'inf'})
-    g_score.update({start:0})
-    f_score.update({start:h_func(start, max_row, max_col)})
+        for dir in '^>v<':
+            g_score.update({(pt, dir):'inf'})
+            f_score.update({(pt, dir):'inf'})
+            g_score.update({(pt, dir + 'e'):'inf'})
+            f_score.update({(pt, dir + 'e'):'inf'})
+    g_score.update({(start, 'o'):0})
+    f_score.update({(start, 'o'):h_func(start, max_row, max_col)})
     # add start to open_points
-    open_points.put([f_score.get(start), start])
+    open_points.put([f_score.get(start), (start, 'o')])
     
     while (not open_points.empty()):
         cur = open_points.get()
-        print(cur)
         cur_node = cur[1]
-        cur_row = cur_node[0]
-        cur_col = cur_node[1]
-        if cur_node == goal:
+        cur_dir = cur[1][1]
+        cur_row = cur_node[0][0]
+        cur_col = cur_node[0][1]
+        if cur_node[0] == goal:
             return create_path(came_from, cur_node)
         neighbors = []
         prev_nodes = []
-        temp_node = cur_node
+        temp_node = cur[1]
         # Get previous nodes
         while (len(prev_nodes) < 3 and temp_node in came_from):
             prev_nodes.append(came_from.get(temp_node))
             temp_node = prev_nodes[-1]
         if (len(prev_nodes) == 0):
             # Starting location, bottom and right are adj !!
-            neighbors.append((cur_node[0] + 1,cur_node[1]))
-            neighbors.append((cur_node[0],cur_node[1] + 1))
+            neighbors.append(((cur_node[0][0] + 1,cur_node[0][1]), 'v'))
+            neighbors.append(((cur_node[0][0],cur_node[0][1] + 1), '>'))
         else:
             # up
-            neighbors.append((cur_row - 1, cur_col))
+            neighbors.append(((cur_row - 1, cur_col), '^'))
             # right
-            neighbors.append((cur_row, cur_col + 1))
+            neighbors.append(((cur_row, cur_col + 1), '>'))
             # down
-            neighbors.append((cur_row + 1, cur_col))
+            neighbors.append(((cur_row + 1, cur_col), 'v'))
             # left
-            neighbors.append((cur_row, cur_col - 1))
-            cur_dir = find_dir(cur_node, prev_nodes[0])
+            neighbors.append(((cur_row, cur_col - 1), '<'))
             if (len(prev_nodes) < 3 or not in_line(cur_node, prev_nodes)):
                 # all 3 nodes are neighbors, remove one opposite direction of travel
                 if cur_dir == '^':
@@ -124,20 +125,18 @@ def a_star(start, goal, loss_map, max_row, max_col):
                 else: # cur_dir == '<'
                     del neighbors[3]
                     del neighbors[1]
-        print(neighbors)
-        print(prev_nodes)
+        
         for neighbor in neighbors:
             # first, check that neighbor is valid
-            if not check_loc(neighbor, max_row, max_col):
+            if not check_loc(neighbor[0], max_row, max_col):
                 continue
-            dist = loss_map.get(neighbor)
+            dist = loss_map.get(neighbor[0])
             est_g_score = g_score.get(cur_node) + dist
             neighbor_g_score = g_score.get(neighbor)
             if ((neighbor_g_score == 'inf') or (est_g_score < neighbor_g_score)):
-                print(neighbor)
                 came_from.update({neighbor:cur_node})
                 g_score.update({neighbor:est_g_score})
-                f_score.update({neighbor:(est_g_score + h_func(neighbor, max_row, max_col))})
+                f_score.update({neighbor:(est_g_score + h_func(neighbor[0], max_row, max_col))})
                 if (not any(neighbor) in loc for loc in open_points.queue):
                     open_points.put([f_score.get(neighbor), neighbor]) 
     # if we get here, we have failed to find a path
@@ -166,7 +165,7 @@ if __name__ == '__main__':
     goal = (rows - 1, cols - 1)
     path = a_star(start, goal, loss_map, rows, cols)
 
-    print('Part 1 solution is: ' + str(len(path)))
+    
 
     total = 0
 
@@ -180,8 +179,10 @@ if __name__ == '__main__':
         print()
 
     total -= loss_map.get((0,0))
-    print(total)
+    print('Part 1 solution is: ' + str(total))
 
     # Answer of 1008 is too high.
+    # Answer of 924 is too low. (has issues w/ too many in a row)
+    # Answer of 998 is too high
 
     f.close()
