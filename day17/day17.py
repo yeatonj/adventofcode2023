@@ -50,10 +50,12 @@ def find_dir(cur_node, prev_node):
             return 'v'
         else:
             return '^'
+        
+
 
 # Do a-star, but store prev directions in addition to current node in order to properly calculate directions
 # Make 'came from' contain 2 prev nodes instead of just one
-def a_star(start, goal, loss_map, max_row, max_col):
+def a_star(start, goal, loss_map, max_row, max_col, max_step_num):
     # discovered nodes that we will iterate through
     open_points = queue.PriorityQueue()
     # tracks preceding nodes (the previous 2, if applicable)
@@ -62,12 +64,6 @@ def a_star(start, goal, loss_map, max_row, max_col):
     g_score = {}
     # gscore + h = fscore
     f_score = {}
-    for pt in loss_map:
-        for dir in '^>v<':
-            g_score.update({(pt, dir):'inf'})
-            f_score.update({(pt, dir):'inf'})
-            g_score.update({(pt, dir + 'e'):'inf'})
-            f_score.update({(pt, dir + 'e'):'inf'})
     g_score.update({(start, 'o'):0})
     f_score.update({(start, 'o'):h_func(start, max_row, max_col)})
     # add start to open_points
@@ -85,62 +81,50 @@ def a_star(start, goal, loss_map, max_row, max_col):
         prev_nodes = []
         temp_node = cur[1]
         # Get previous nodes
-        while (len(prev_nodes) < 2 and temp_node in came_from):
+        dir = ''
+        while (len(prev_nodes) < max_step_num and temp_node in came_from):
             prev_nodes.append(came_from.get(temp_node))
+            dir = find_dir(temp_node[0], prev_nodes[-1][0]) + dir
             temp_node = prev_nodes[-1]
-        if (len(prev_nodes) == 0):
+        if (dir == ''):
             # Starting location, bottom and right are adj !!
             neighbors.append(((cur_node[0][0] + 1,cur_node[0][1]), 'v'))
             neighbors.append(((cur_node[0][0],cur_node[0][1] + 1), '>'))
         else:
-            # up
-            neighbors.append(((cur_row - 1, cur_col), '^'))
-            # right
-            neighbors.append(((cur_row, cur_col + 1), '>'))
-            # down
-            neighbors.append(((cur_row + 1, cur_col), 'v'))
-            # left
-            neighbors.append(((cur_row, cur_col - 1), '<'))
-            # Case 1: we are already at an endpoint
-            if 'e' in cur_dir:
-                # only left and right nodes are neighbors
-                if cur_dir == '^e':
-                    del neighbors[2]
-                    del neighbors[0]
-                elif cur_dir == '>e':
-                    del neighbors[3]
-                    del neighbors[1]
-                elif cur_dir == 've':
-                    del neighbors[2]
-                    del neighbors[0]
-                else: # cur_dir == '<'
-                    del neighbors[3]
-                    del neighbors[1]
-            # Case 2: no restrictions
-            elif (len(prev_nodes) < 2 or not in_line(cur_node, prev_nodes)):
-                # all 3 nodes are neighbors, remove one opposite direction of travel
-                if cur_dir == '^':
-                    del neighbors[2]
-                elif cur_dir == '>':
-                    del neighbors[3]
-                elif cur_dir == 'v':
-                    del neighbors[0]
-                else: # cur_dir == '<'
-                    del neighbors[1]   
-            # Case 3: the next node is an endpoint. All 3 are neighbors, but one in dir of travel gets 'e'
+            # extract only the relevant steps for neighbor
+            if len(dir) < max_step_num:
+                sub_dir = dir
             else:
-                if cur_dir == '^':
-                    neighbors[0] = ((cur_row - 1, cur_col), '^e')
-                    del neighbors[2]
-                elif cur_dir == '>':
-                    neighbors[1] = ((cur_row, cur_col + 1), '>e')
-                    del neighbors[3]
-                elif cur_dir == 'v':
-                    neighbors[2] = ((cur_row + 1, cur_col), 've')
-                    del neighbors[0]
-                else: # cur_dir == '<'
-                    neighbors[3] = ((cur_row, cur_col - 1), '<e')
-                    del neighbors[1]  
+                sub_dir = dir[1:]
+            # up
+            neighbors.append(((cur_row - 1, cur_col), sub_dir + '^'))
+            # right
+            neighbors.append(((cur_row, cur_col + 1), sub_dir + '>'))
+            # down
+            neighbors.append(((cur_row + 1, cur_col), sub_dir + 'v'))
+            # left
+            neighbors.append(((cur_row, cur_col - 1), sub_dir + '<'))
+            # First 4 cases -> must turn
+            if dir == max_step_num * '^':
+                del neighbors[2]
+                del neighbors[0]
+            elif dir == max_step_num * '>':
+                del neighbors[3]
+                del neighbors[1]
+            elif dir == max_step_num * 'v':
+                del neighbors[2]
+                del neighbors[0]
+            elif dir == max_step_num * '<':
+                del neighbors[3]
+                del neighbors[1]
+            elif dir[-1] == '^':
+                del neighbors[2]
+            elif dir[-1] == '>':
+                del neighbors[3]
+            elif dir[-1] == 'v':
+                del neighbors[0]
+            else: # last value is '<'
+                del neighbors[1]
         
         for neighbor in neighbors:
             # first, check that neighbor is valid
@@ -148,6 +132,8 @@ def a_star(start, goal, loss_map, max_row, max_col):
                 continue
             dist = loss_map.get(neighbor[0])
             est_g_score = g_score.get(cur_node) + dist
+            if neighbor not in g_score:
+                g_score.update({neighbor:'inf'})
             neighbor_g_score = g_score.get(neighbor)
             if ((neighbor_g_score == 'inf') or (est_g_score < neighbor_g_score)):
                 came_from.update({neighbor:cur_node})
@@ -160,8 +146,8 @@ def a_star(start, goal, loss_map, max_row, max_col):
 
 if __name__ == '__main__':
     file_name = 'data.txt'
-    file_name = 'data-test.txt'
-    file_name = 'data-test-2.txt'
+    # file_name = 'data-test.txt'
+    # file_name = 'data-test-2.txt'
 
     f = open(file_name)
 
@@ -179,7 +165,7 @@ if __name__ == '__main__':
 
     start = (0,0)
     goal = (rows - 1, cols - 1)
-    path = a_star(start, goal, loss_map, rows, cols)
+    path = a_star(start, goal, loss_map, rows, cols, 3)
 
     
 
