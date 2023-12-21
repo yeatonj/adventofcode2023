@@ -85,7 +85,7 @@ def a_star(start, goal, loss_map, max_row, max_col):
         prev_nodes = []
         temp_node = cur[1]
         # Get previous nodes
-        while (len(prev_nodes) < 3 and temp_node in came_from):
+        while (len(prev_nodes) < 2 and temp_node in came_from):
             prev_nodes.append(came_from.get(temp_node))
             temp_node = prev_nodes[-1]
         if (len(prev_nodes) == 0):
@@ -101,7 +101,23 @@ def a_star(start, goal, loss_map, max_row, max_col):
             neighbors.append(((cur_row + 1, cur_col), 'v'))
             # left
             neighbors.append(((cur_row, cur_col - 1), '<'))
-            if (len(prev_nodes) < 3 or not in_line(cur_node, prev_nodes)):
+            # Case 1: we are already at an endpoint
+            if 'e' in cur_dir:
+                # only left and right nodes are neighbors
+                if cur_dir == '^e':
+                    del neighbors[2]
+                    del neighbors[0]
+                elif cur_dir == '>e':
+                    del neighbors[3]
+                    del neighbors[1]
+                elif cur_dir == 've':
+                    del neighbors[2]
+                    del neighbors[0]
+                else: # cur_dir == '<'
+                    del neighbors[3]
+                    del neighbors[1]
+            # Case 2: no restrictions
+            elif (len(prev_nodes) < 2 or not in_line(cur_node, prev_nodes)):
                 # all 3 nodes are neighbors, remove one opposite direction of travel
                 if cur_dir == '^':
                     del neighbors[2]
@@ -110,21 +126,21 @@ def a_star(start, goal, loss_map, max_row, max_col):
                 elif cur_dir == 'v':
                     del neighbors[0]
                 else: # cur_dir == '<'
-                    del neighbors[1]
+                    del neighbors[1]   
+            # Case 3: the next node is an endpoint. All 3 are neighbors, but one in dir of travel gets 'e'
             else:
-                # only left and right nodes are neighbors
                 if cur_dir == '^':
+                    neighbors[0] = ((cur_row - 1, cur_col), '^e')
                     del neighbors[2]
-                    del neighbors[0]
                 elif cur_dir == '>':
+                    neighbors[1] = ((cur_row, cur_col + 1), '>e')
                     del neighbors[3]
-                    del neighbors[1]
                 elif cur_dir == 'v':
-                    del neighbors[2]
+                    neighbors[2] = ((cur_row + 1, cur_col), 've')
                     del neighbors[0]
                 else: # cur_dir == '<'
-                    del neighbors[3]
-                    del neighbors[1]
+                    neighbors[3] = ((cur_row, cur_col - 1), '<e')
+                    del neighbors[1]  
         
         for neighbor in neighbors:
             # first, check that neighbor is valid
@@ -184,5 +200,6 @@ if __name__ == '__main__':
     # Answer of 1008 is too high.
     # Answer of 924 is too low. (has issues w/ too many in a row)
     # Answer of 998 is too high
+    # Answer of 972 is incorrect, not sure which direction
 
     f.close()
