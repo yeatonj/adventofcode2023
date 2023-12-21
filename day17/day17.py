@@ -51,11 +51,18 @@ def find_dir(cur_node, prev_node):
         else:
             return '^'
         
+def check_end(dir, min_straight_steps):
+    last_let = dir[-1]
+    for i in range(2, min_straight_steps + 1):
+        ind = -1 * i
+        if dir[ind] != last_let:
+            return True
+    return False
 
 
 # Do a-star, but store prev directions in addition to current node in order to properly calculate directions
 # Make 'came from' contain 2 prev nodes instead of just one
-def a_star(start, goal, loss_map, max_row, max_col, max_step_num):
+def a_star(start, goal, loss_map, max_row, max_col, max_step_num, min_straight_steps):
     # discovered nodes that we will iterate through
     open_points = queue.PriorityQueue()
     # tracks preceding nodes (the previous 2, if applicable)
@@ -75,7 +82,7 @@ def a_star(start, goal, loss_map, max_row, max_col, max_step_num):
         cur_dir = cur[1][1]
         cur_row = cur_node[0][0]
         cur_col = cur_node[0][1]
-        if cur_node[0] == goal:
+        if cur_node[0] == goal and not check_end(cur_node[1], min_straight_steps):
             return create_path(came_from, cur_node)
         neighbors = []
         prev_nodes = []
@@ -90,6 +97,15 @@ def a_star(start, goal, loss_map, max_row, max_col, max_step_num):
             # Starting location, bottom and right are adj !!
             neighbors.append(((cur_node[0][0] + 1,cur_node[0][1]), 'v'))
             neighbors.append(((cur_node[0][0],cur_node[0][1] + 1), '>'))
+        elif ((len(dir) < min_straight_steps) or check_end(dir, min_straight_steps)):
+            if cur_dir[-1] == '^':
+                neighbors.append(((cur_node[0][0] - 1,cur_node[0][1]), cur_dir[1:] + cur_dir[-1]))
+            elif cur_dir[-1] == '>':
+                neighbors.append(((cur_node[0][0],cur_node[0][1] + 1), cur_dir[1:] + cur_dir[-1]))
+            elif cur_dir[-1] == 'v':
+                neighbors.append(((cur_node[0][0] + 1,cur_node[0][1]), cur_dir[1:] + cur_dir[-1]))
+            else: # cur_dir == '<'
+                neighbors.append(((cur_node[0][0],cur_node[0][1] - 1), cur_dir[1:] + cur_dir[-1]))
         else:
             # extract only the relevant steps for neighbor
             if len(dir) < max_step_num:
@@ -104,7 +120,7 @@ def a_star(start, goal, loss_map, max_row, max_col, max_step_num):
             neighbors.append(((cur_row + 1, cur_col), sub_dir + 'v'))
             # left
             neighbors.append(((cur_row, cur_col - 1), sub_dir + '<'))
-            # First 4 cases -> must turn
+            # 4 cases -> must turn
             if dir == max_step_num * '^':
                 del neighbors[2]
                 del neighbors[0]
@@ -124,8 +140,8 @@ def a_star(start, goal, loss_map, max_row, max_col, max_step_num):
             elif dir[-1] == 'v':
                 del neighbors[0]
             else: # last value is '<'
-                del neighbors[1]
-        
+                del neighbors[1]        
+
         for neighbor in neighbors:
             # first, check that neighbor is valid
             if not check_loc(neighbor[0], max_row, max_col):
@@ -140,7 +156,7 @@ def a_star(start, goal, loss_map, max_row, max_col, max_step_num):
                 g_score.update({neighbor:est_g_score})
                 f_score.update({neighbor:(est_g_score + h_func(neighbor[0], max_row, max_col))})
                 if (not any(neighbor) in loc for loc in open_points.queue):
-                    open_points.put([f_score.get(neighbor), neighbor]) 
+                    open_points.put([f_score.get(neighbor), neighbor])
     # if we get here, we have failed to find a path
     return -1
 
@@ -165,27 +181,36 @@ if __name__ == '__main__':
 
     start = (0,0)
     goal = (rows - 1, cols - 1)
-    path = a_star(start, goal, loss_map, rows, cols, 3)
-
+    path_pt_1 = a_star(start, goal, loss_map, rows, cols, 3, 0)
+    path_pt_2 = a_star(start, goal, loss_map, rows, cols, 10, 4)
     
 
-    total = 0
-
+    total_pt_1 = 0
     for i in range(rows):
         for j in range(col):
-            if (i,j) in path:
+            if (i,j) in path_pt_1:
                 print('#', end='')
-                total += loss_map.get((i,j))
+                total_pt_1 += loss_map.get((i,j))
             else:
                 print('.', end='')
         print()
 
-    total -= loss_map.get((0,0))
-    print('Part 1 solution is: ' + str(total))
+    print()
 
-    # Answer of 1008 is too high.
-    # Answer of 924 is too low. (has issues w/ too many in a row)
-    # Answer of 998 is too high
-    # Answer of 972 is incorrect, not sure which direction
+    total_pt_2 = 0
+    for i in range(rows):
+        for j in range(col):
+            if (i,j) in path_pt_2:
+                print('#', end='')
+                total_pt_2 += loss_map.get((i,j))
+            else:
+                print('.', end='')
+        print()
+
+    total_pt_1 -= loss_map.get((0,0))
+    print('Part 1 solution is: ' + str(total_pt_1))
+
+    total_pt_2 -= loss_map.get((0,0))
+    print('Part 2 solution is: ' + str(total_pt_2))
 
     f.close()
