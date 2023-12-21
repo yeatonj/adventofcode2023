@@ -25,98 +25,57 @@ def parse_line_pt_2(line):
         dir = 'U'
     return (dir, int(hex_num, 0))
 
-def get_adj(coord):
-    return [(coord[0], coord[1] + 1),
-            (coord[0], coord[1] - 1),
-            (coord[0] + 1, coord[1]),
-            (coord[0] - 1, coord[1])]
-
-def add_trench(cur_loc, dir, dist, trench_locs):
+def add_point(cur_loc, dir, dist, all_points, boundary_count):
     if dir == 'R':
-        delta = (0, 1)
+        delta = (0, 1*dist)
     elif dir == 'L':
-        delta = (0,-1)
+        delta = (0,-1*dist)
     elif dir == 'U':
-        delta = (-1, 0)
+        delta = (-1*dist, 0)
     elif dir == 'D':
-        delta = (1, 0)
-    for i in range(1, dist + 1):
-        cur_loc = (cur_loc[0] + delta[0], cur_loc[1] + delta[1])
-        trench_locs.update({cur_loc:1})
-    return cur_loc
+        delta = (1*dist, 0)
+    new_loc = (cur_loc[0] + delta[0], cur_loc[1] + delta[1])
+    all_points.append(new_loc)
+    boundary_count[0] += dist
+    return new_loc
 
-def fill_trench(trench_locs, min_row, min_col, max_row, max_col):
-    fill_queue = queue.Queue()
-    # Find first filled location in the first row
-    c = 0
-    while((0, c) not in trench_locs):
-        c += 1
-        # Grab the first inside loc by moving diagonally
-    first_inside = (1, c + 1)
-    fill_queue.put(first_inside)
-    while (not fill_queue.empty()):
-        cur_node = fill_queue.get()
-        if cur_node not in trench_locs:
-            trench_locs.update({cur_node:1})
-            adj_nodes = get_adj(cur_node)
-            for n in adj_nodes:
-                fill_queue.put(n)
-    return trench_locs
+def shoelace_area(points):
+    cur_loc = points[0]
+    total = 0
+    for i in range(1,len(points)):
+        new_loc = points[i]
+        total += ((cur_loc[0] + new_loc[0])*(cur_loc[1] - new_loc[1]))
+        cur_loc = new_loc
+    total /= 2
+    return total
 
+def pick_thm(shoe_area, boundary_count):
+    interior_pts = shoe_area - boundary_count/2 + 1
+    return int(interior_pts)
 
 if __name__ == '__main__':
     file_name = 'data.txt'
-    file_name = 'data-test.txt'
+    # file_name = 'data-test.txt'
 
     f = open(file_name)
 
     trench_locs = {}
     cur_loc = (0,0)
     trench_locs.update({cur_loc:1})
+    all_points =[cur_loc]
+    boundary_count = [0]
 
     for line in f:
-        (dir, dist, color) = parse_line(line)
-        # (dir, dist) = parse_line_pt_2(line)
-        cur_loc = add_trench(cur_loc, dir, dist, trench_locs)
+        # (dir, dist, color) = parse_line(line)
+        (dir, dist) = parse_line_pt_2(line)
+        # cur_loc = add_trench(cur_loc, dir, dist, trench_locs)
+        cur_loc = add_point(cur_loc, dir, dist, all_points, boundary_count)
+
+    shoe_area = shoelace_area(all_points)
+
+    interior_pts = pick_thm(shoe_area, boundary_count[0])
+
+    print('Answer is: '+ str(interior_pts + boundary_count[0]))
     
 
     f.close()
-
-    max_row = 0
-    max_col = 0
-    min_row = 0
-    min_col = 0
-    for entry in trench_locs:
-        if entry[0] > max_row:
-            max_row = entry[0]
-        if entry[1] > max_col:
-            max_col = entry[1]
-        if entry[0] < min_row:
-            min_row = entry[0]
-        if entry[1] < min_col:
-            min_col = entry[1]
-
-    # for i in range(min_row, max_row + 1):
-    #     for j in range(min_col, max_col + 1):
-    #         if (i,j) in trench_locs:
-    #             print('#', end='')
-    #         else:
-    #             print('.', end='')
-    #     print()
-
-    # print()
-
-    filled_trench = fill_trench(trench_locs, min_row, min_col, max_row, max_col)
-    total_filled = 0
-
-    for i in range(min_row, max_row + 1):
-        for j in range(min_col, max_col + 1):
-            if (i,j) in filled_trench:
-                # print('#', end='')
-                total_filled += 1
-            else:
-                # print('.', end='')
-                pass
-        # print()
-
-    print('Part 1 solution is: ' + str(total_filled))
