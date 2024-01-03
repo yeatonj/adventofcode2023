@@ -35,10 +35,43 @@ def query_vals(line, flow_dic):
         return 0
     else:
         return sum(local_vals.values())
+    
+def update_bounds(cur_bounds, cur_node, pass_fail, flow_dic):
+    node_name = cur_node[0]
+    node_index = cur_node[1]
+    rule = flow_dic.get(node_name)[node_index][0]
+    if '<' not in rule and '>' not in rule:
+        # unconditional exit
+        return
+    var = rule[0]
+    var_bounds = cur_bounds.get(var)
+    sign = rule[1]
+    num = int(rule[2:])
+    if pass_fail =='P' and sign == '<':
+        new_max = num - 1
+        if new_max < var_bounds[1]:
+            var_bounds[1] = new_max
+    elif pass_fail == 'P' and sign == '>':
+        new_min = num + 1
+        if new_min > var_bounds[0]:
+            var_bounds[0] = new_min
+    elif pass_fail == 'F' and sign == '<':
+        new_min = num
+        if new_min > var_bounds[0]:
+            var_bounds[0] = new_min
+    elif pass_fail == 'F' and sign == '>':
+        new_max = num
+        if new_max < var_bounds[1]:
+            var_bounds[1] = new_max
+    else:
+        print('Something went wrong in bounds. Exiting.')
+        exit()
+    return
+
 
 if __name__ == '__main__':
     file_name = 'data.txt'
-    file_name = 'data-test.txt'
+    # file_name = 'data-test.txt'
 
     f = open(file_name)
 
@@ -89,10 +122,18 @@ if __name__ == '__main__':
     # print(accept_nodes)
     # print(reject_nodes)
     # print(reverse_flow_dic)
+                    
+    total_pt_2 = 0
 
     for fin_node in accept_nodes:
+        x_bounds = [1, 4000]
+        m_bounds = [1, 4000]
+        a_bounds = [1, 4000]
+        s_bounds = [1, 4000]
+        all_bounds = {'x':x_bounds, 'm':m_bounds, 'a':a_bounds, 's':s_bounds}
         cur_node = fin_node
-        print(cur_node, end=' (P)')
+        # print(cur_node, end=' (P)')
+        update_bounds(all_bounds, cur_node, 'P', flow_dic)
         while (cur_node != ('in', 0)):
             node_name = cur_node[0]
             node_num = cur_node[1]
@@ -101,16 +142,24 @@ if __name__ == '__main__':
                     next_node = (node_name, node_num - 1)
                     node_num -= 1
                     cur_node = next_node
-                    print(' <- ', end='')
-                    print(cur_node, end=' (F)')
+                    # print(' <- ', end='')
+                    # print(cur_node, end=' (F)')
+                    update_bounds(all_bounds, cur_node, 'F', flow_dic)
             else:
                 next_node = reverse_flow_dic.get(node_name)[0]
                 cur_node = next_node
-                print(' <- ', end='')
-                print(cur_node, end=' (P)')
-            
-        print()
-        print()
+                # print(' <- ', end='')
+                # print(cur_node, end=' (P)')
+                update_bounds(all_bounds, cur_node, 'P', flow_dic)
+
+        # print()
+        # print()
+        subtotal = 1
+        for val in all_bounds:
+            subtotal *= (all_bounds.get(val)[1] - all_bounds.get(val)[0] + 1)
+        total_pt_2 += subtotal
+
+    print('Part 2 solution is: ' + str(total_pt_2))
     
 
     f.close()
