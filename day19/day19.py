@@ -1,7 +1,7 @@
 # File for day 19 of AoC 2023
 # Written by Joshua Yeaton on 1/3/2024
 
-def add_line(line, flow_dic, x_vals, m_vals, a_vals, s_vals):
+def add_line(line, flow_dic):
     line_segs = line[0:-1].split('{')
     flow_name = line_segs[0]
     flows = line_segs[1].split(',')
@@ -9,29 +9,6 @@ def add_line(line, flow_dic, x_vals, m_vals, a_vals, s_vals):
     for flow in flows:
         actual_flow = flow.split(':')
         actual_flows.append(actual_flow)
-        if len(actual_flow) == 2:
-            var_letter = actual_flow[0][0]
-            sign = actual_flow[0][1]
-            var_num = int(actual_flow[0][2:])
-            if sign == '>':
-                high_num = var_num + 1
-                low_num = var_num
-            else:
-                high_num = var_num
-                low_num = var_num - 1
-            # append to the appropriate list
-            if var_letter == 'x':
-                x_vals.append(low_num)
-                x_vals.append(high_num)
-            if var_letter == 'm':
-                m_vals.append(low_num)
-                m_vals.append(high_num)
-            if var_letter == 'a':
-                a_vals.append(low_num)
-                a_vals.append(high_num)
-            else:
-                s_vals.append(low_num)
-                s_vals.append(high_num)
     flow_dic.update({flow_name:actual_flows})
 
 def query_vals(line, flow_dic):
@@ -67,10 +44,6 @@ if __name__ == '__main__':
 
     querying = False
     flow_dic = {}
-    x_vals = [1]
-    m_vals = [1]
-    a_vals = [1]
-    s_vals = [1]
 
     total = 0
     
@@ -79,21 +52,11 @@ if __name__ == '__main__':
         if not querying and line == '':
             querying = True
         elif not querying:
-            add_line(line, flow_dic, x_vals, m_vals, a_vals, s_vals)
+            add_line(line, flow_dic)
         else:
             total += query_vals(line, flow_dic)
 
     print('Part 1 solution is: ' + str(total))
-
-    x_vals.append(4000)
-    m_vals.append(4000)
-    a_vals.append(4000)
-    s_vals.append(4000)
-
-    print(x_vals)
-    print(m_vals)
-    print(a_vals)
-    print(s_vals)
 
     accept_nodes = []
     reject_nodes = []
@@ -109,27 +72,45 @@ if __name__ == '__main__':
                 reject_nodes.append((entry, index))
             if len(val) == 2 and val[1] not in 'AR':
                 if val[1] not in reverse_flow_dic:
-                    reverse_flow_dic.update({val[1]:[entry]})
+                    reverse_flow_dic.update({val[1]:[(entry, index)]})
                 else:
                     cur_val = reverse_flow_dic.get(val[1])
-                    cur_val.append(entry)
+                    cur_val.append((entry, index))
                     reverse_flow_dic.update({val[1]:cur_val})
             elif len(val) == 1 and val[0] not in 'AR':
                 if val[0] not in reverse_flow_dic:
-                    reverse_flow_dic.update({val[0]:[entry]})
+                    reverse_flow_dic.update({val[0]:[(entry, index)]})
                 else:
                     cur_val = reverse_flow_dic.get(val[0])
-                    cur_val.append(entry)
+                    cur_val.append((entry, index))
                     reverse_flow_dic.update({val[0]:cur_val})
-
-
-    # Alternate method - just check the values on either side of each of the 
-    # specified vals - if R, subtract, else add
     
     
     # print(accept_nodes)
     # print(reject_nodes)
     # print(reverse_flow_dic)
+
+    for fin_node in accept_nodes:
+        cur_node = fin_node
+        print(cur_node, end=' (P)')
+        while (cur_node != ('in', 0)):
+            node_name = cur_node[0]
+            node_num = cur_node[1]
+            if node_num > 0:
+                while (node_num > 0):
+                    next_node = (node_name, node_num - 1)
+                    node_num -= 1
+                    cur_node = next_node
+                    print(' <- ', end='')
+                    print(cur_node, end=' (F)')
+            else:
+                next_node = reverse_flow_dic.get(node_name)[0]
+                cur_node = next_node
+                print(' <- ', end='')
+                print(cur_node, end=' (P)')
+            
+        print()
+        print()
     
 
     f.close()
