@@ -21,19 +21,16 @@ def parse_input(file_name):
 def visit_adj(coord_dic, to_visit, cur_r, cur_c, max_r, max_c):
     nodes = []
     # up node
-    if cur_r > 0:
-        nodes.append((cur_r - 1, cur_c))
+    nodes.append((cur_r - 1, cur_c))
     # down node
-    if cur_r < max_r - 1:
-        nodes.append((cur_r + 1, cur_c))
+    nodes.append((cur_r + 1, cur_c))
     # left node
-    if cur_c > 0:
-        nodes.append((cur_r, cur_c -1))
+    nodes.append((cur_r, cur_c -1))
     # right node
-    if cur_c < max_c - 1:
-        nodes.append((cur_r, cur_c + 1))
+    nodes.append((cur_r, cur_c + 1))
     for node in nodes:
-        if coord_dic.get(node) != '#' and node not in to_visit:
+        temp_node = (node[0] % max_r, node[1] % max_c)
+        if coord_dic.get(temp_node) != '#' and node not in to_visit:
             to_visit.update({node:0})
 
 
@@ -43,7 +40,11 @@ if __name__ == '__main__':
 
     (coord_dic, max_r, max_c, start_r, start_c) = parse_input(file_name)
 
-    steps = 64
+    # input starts in the direct center, with each line having no blockages - allows us to determine formula
+    steps = 64 # part 1 solution
+    # steps = 65 # result is 3849
+    # steps = 65 + 131 # result is 34331
+    # steps = 65 + 131*2 # result is 95175
     to_visit = {(start_r, start_c):0}
     for i in range(steps):
         next = {}
@@ -52,4 +53,15 @@ if __name__ == '__main__':
         to_visit = next
 
     print(len(to_visit))
+
+    # equation is a*x^2 + b*x + c = d
+    # x is steps, d is result - solved using system of equations solver
+    a = 15181/17161
+    b = 30901/17161
+    c = -95601/17161
+
+    final_steps = 26501365
+
+    soln = a*final_steps**2 + b * final_steps + c
+    print(round(soln))
     
