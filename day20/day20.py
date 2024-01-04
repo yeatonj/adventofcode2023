@@ -77,10 +77,18 @@ def press_button(modules, presses):
 def process_signal(modules, module_queue, cur_signal, presses):
     signaled_module = cur_signal[0]
     signal = cur_signal[1]
-    if signaled_module == 'rx' and signal == 0:
-        print('done, with ' + str(presses) + ' presses.')
-        exit()
     signal_from = cur_signal[2]
+    # ---- section for determining possible triggers for the RX low
+    if signaled_module == 'mf' and signal == 1 and signal_from == 'sh':
+        print('sh high at ' + str(presses) + ' presses, signaling from ' + signal_from)
+    if signaled_module == 'mf' and signal == 1 and signal_from == 'bh':
+        print('bh high at ' + str(presses) + ' presses, signaling from ' + signal_from)
+    if signaled_module == 'mf' and signal == 1 and signal_from == 'jf':
+        print('jf high at ' + str(presses) + ' presses, signaling from ' + signal_from)
+    if signaled_module == 'mf' and signal == 1 and signal_from == 'mz':
+        print('mz high at ' + str(presses) + ' presses, signaling from ' + signal_from)
+
+    # ---- end of section
     mod_type = modules.get(signaled_module).get('type')
     # print(mod_type)
     if mod_type == '':
@@ -141,6 +149,6 @@ if __name__ == '__main__':
     i = 0
     while(True):
         i += 1
-        if i % 10000 == 0:
-            print('Iteration: ' + str(i))
+        # if i % 10000 == 0:
+        #     print('Iteration: ' + str(i))
         (low_sent, high_sent) = press_button(modules, i)
