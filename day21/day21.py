@@ -63,5 +63,5 @@ if __name__ == '__main__':
     final_steps = 26501365
 
     soln = a*final_steps**2 + b * final_steps + c
-    print(round(soln))
+    print(soln)
     
